@@ -1,27 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Home() {
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [data, setData] = useState(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async e => {
+    // e: React.FormEvent
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/generate-image", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ text: inputText }),
-      });
+      const response = await fetch(
+        "http://localhost:8000/generate_image?prompt=${encodeURIComponent(inputText)}",
+        {
+          method: "GET",
+        }
+      );
 
-      const data = await response.json();
-      console.log(data);
-      setInputText("");
+      if (!response.ok) {
+        throw new Error("Failed to generate image");
+      }
+
+      const blob = await response.blob();
+      const imageURL = URL.createObjectURL(blob);
+      setData(imageURL);
+      console.log("Generated image URL:", imageURL);
+      console.log(`data is ${data}`);
+      // setInputText("");
     } catch (error) {
       console.error("Error:", error);
     } finally {
@@ -30,10 +38,18 @@ export default function Home() {
   };
 
   return (
-    // TODO: Update the UI here to show the images generated
-    
     <div className="min-h-screen flex flex-col justify-between p-8">
-      <main className="flex-1">{/* Main content can go here */}</main>
+      <main className="flex-1">
+        {data ? (
+          <img
+            src={data}
+            alt="Generated Image"
+            className="w-full max-w-lg mx-auto"
+          />
+        ) : (
+          <p>Loading...</p>
+        )}
+      </main>
 
       <footer className="w-full max-w-3xl mx-auto">
         <form onSubmit={handleSubmit} className="w-full">
